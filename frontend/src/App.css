@@ -1,0 +1,8 @@
+.home-heading-small{
+    font-size: clamp(26px, 2vw + 1rem, 36px);
+}
+
+.auto {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  
