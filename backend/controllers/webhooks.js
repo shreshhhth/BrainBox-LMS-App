@@ -65,10 +65,10 @@ export const stripeWebhooks = async (request, response) => {
     let event;
 
     try {
-        event = Stripe.webhooks.constructEvent(request.body, sig, process.end.STRIPE_WEBHOOK_SECRET);
+        event = Stripe.webhooks.constructEvent(request.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
     }
     catch (err) {
-        response.status(400).send(`Webhook Error: ${err.message}`);
+        return response.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     //Handle Error
@@ -79,16 +79,21 @@ export const stripeWebhooks = async (request, response) => {
 
 
             const session = await stripeInstance.checkout.sessions.list({
-                payment_intent: paymentIntentId
+                payment_intent: paymentIntentId,
             })
+
+            if (!session.data.length) {
+                console.error("No checkout session found for paymentIntent:", paymentIntentId);
+                return response.status(404).json({ error: "Session not found" });
+            }
 
             const { purchaseId } = session.data[0].metadata;
 
-            const purchaseData = await Purchase.findById(purchaseId)
-            const userData = await User.findById(purchaseData.userId)
-            const courseData = await Course.findById(purchaseData.courseId.toString())
+            const purchaseData = await Purchase.findById(purchaseId);
+            const userData = await User.findById(purchaseData.userId);
+            const courseData = await Course.findById(purchaseData.courseId.toString());
 
-
+            //Update
             courseData.enrolledStudents.push(userData)
             await courseData.save()
 
@@ -123,5 +128,5 @@ export const stripeWebhooks = async (request, response) => {
     }
 
     // Return a response to acknowledge receipt of the event
-    response.json({ received: true });
+    return response.json({ received: true });
 }
