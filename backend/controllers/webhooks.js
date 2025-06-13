@@ -139,7 +139,7 @@ export const stripeWebhooks = async (req, res) => {
     let event;
 
     try {
-        event = Stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
+        event = Stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
         console.log('Event type:', event.type);
         console.log('Event ID:', event.id);
     } catch (error) {
