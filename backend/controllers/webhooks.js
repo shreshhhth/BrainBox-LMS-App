@@ -202,6 +202,13 @@ export const stripeWebhooks = async (req, res) => {
                             purchaseData.status = 'completed';
                             await purchaseData.save();
                             console.log('✅ Purchase status updated to completed');
+                            const userData = await User.findById(purchaseData.userId)
+                            const courseData = await Course.findById(purchaseData.courseId.toString())
+                            courseData.enrolledStudents.push(userData)
+                            await courseData.save()
+
+                            userData.enrolledCourses.push(courseData._id)
+                            await userData.save()
                         }
                     } else {
                         console.log('❌ No purchaseId in session metadata');
