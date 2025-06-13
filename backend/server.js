@@ -17,8 +17,8 @@ await connectCloudinary()
 
 
 //Routes
-app.get('/', (req, res) => { res.send("API Working") })
 app.post('/stripe', express.raw({ type: 'application/json' }), stripeWebhooks)
+app.get('/', (req, res) => { res.send("API Working") })
 app.post('/clerk', express.json(), clerkWebhooks)
 
 //Middlewares
