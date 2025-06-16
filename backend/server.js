@@ -22,7 +22,11 @@ app.get('/', (req, res) => { res.send("API Working") })
 app.post('/clerk', express.json(), clerkWebhooks)
 
 //Middlewares
-app.use(cors())
+app.use(cors({
+    origin: 'http://localhost:5174', // or your deployed frontend URL
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
+}))
 app.use(clerkMiddleware())
 // ------------------- Application Routes -------------------
 app.use('/api/educator', express.json(), educatorRouter);

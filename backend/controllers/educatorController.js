@@ -7,6 +7,8 @@ import User from '../models/userModel.js'
 
 //For updating user role to Educator
 export const updateRoleToEducator = async (req, res) => {
+    console.log("Updating role to educator...") // Debugging line;
+
     try {
         const userId = req.auth.userId
         await clerkClient.users.updateUserMetadata(userId, {
@@ -29,29 +31,29 @@ export const addCourse = async (req, res) => {
         const educatorId = req.auth.userId;
 
         if (!imageFile) {
-            return res.json({ success: false, message: 'Thumbnail not attached' })
+            return res.json({ success: false, message: 'Thumbnail not attached' });
         }
 
-        const parsedCourseData = await JSON.parse(courseData)
-        //Adding educator id to this data
-        parsedCourseData.educator = educatorId
-        //Saving the Course using Course model in the MongoDB database
+        const parsedCourseData = JSON.parse(courseData);
+
+        // Upload image first to Cloudinary
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path);
+        parsedCourseData.courseThumbnail = imageUpload.secure_url;
+
+        // Add educator ID
+        parsedCourseData.educator = educatorId;
+
+        // Now save the course with thumbnail and educator
         const newCourse = await Course.create(parsedCourseData);
-        //Also adding Image to the Cloudinary and adding the URL in the course Data
-        const imageUpload = await cloudinary.uploader.upload(imageFile.path)
-        newCourse.courseThumbnail = imageUpload.secure_url //Stored the URL in the Database
-        await newCourse.save();
 
-        res.json({ success: true, message: 'Course Added' })
-
+        res.json({ success: true, message: 'Course Added', course: newCourse });
 
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
-
-
+        console.log(error);
+        res.json({ success: false, message: error.message });
     }
-}
+};
+
 
 //Get educator courses
 export const getEducatorCourses = async (req, res) => {

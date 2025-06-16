@@ -1,9 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import uniqid from "uniqid";
 import Quill from "quill";
 import { assets } from "../../assets/assets";
+import { AppContext } from "../../context/AppContext";
+import { toast } from "react-toastify";
+import axios from "axios";
 
 const AddCourse = () => {
+  const { backendURL, getToken } = useContext(AppContext);
   const quillRef = useRef(null);
   const editorRef = useRef(null);
 
@@ -21,36 +25,38 @@ const AddCourse = () => {
     isPreviewFree: false,
   });
 
-const handleChapter = (action, chapterId) => {
-  if (action === "add") {
-    const title = prompt("Enter Chapter Name:");
-    if (title) {
-      const newChapter = {
-        chapterId: uniqid(),
-        chapterTitle: title,
-        chapterContent: [],
-        collapsed: false,
-        chapterOrder:
-          chapters.length > 0 ? chapters.slice(-1)[0].chapterOrder + 1 : 1,
-      };
-      setChapters([...chapters, newChapter]);
+  const handleChapter = (action, chapterId) => {
+    if (action === "add") {
+      const title = prompt("Enter Chapter Name:");
+      if (title) {
+        const newChapter = {
+          chapterId: uniqid(),
+          chapterTitle: title,
+          chapterContent: [],
+          collapsed: false,
+          chapterOrder:
+            chapters.length > 0 ? chapters.slice(-1)[0].chapterOrder + 1 : 1,
+        };
+        setChapters([...chapters, newChapter]);
+      }
+    } else if (action === "remove") {
+      setChapters(
+        chapters.filter((chapter) => chapter.chapterId !== chapterId)
+      );
+    } else if (action === "toggle") {
+      setChapters(
+        chapters.map((chapter) =>
+          chapter.chapterId === chapterId
+            ? { ...chapter, collapsed: !chapter.collapsed }
+            : chapter
+        )
+      );
     }
-  } else if (action === "remove") {
-    setChapters(
-      chapters.filter((chapter) => chapter.chapterId !== chapterId)
-    );
-  } else if (action === "toggle") {
-    setChapters(
-      chapters.map((chapter) =>
-        chapter.chapterId === chapterId
-          ? { ...chapter, collapsed: !chapter.collapsed }
-          : chapter
-      )
-    );
-  }
-};
+  };
 
-{/*Function for Showing Lecture Form */}
+  {
+    /*Function for Showing Lecture Form */
+  }
   const handleLecture = (action, chapterId, lectureIndex) => {
     if (action === "add") {
       setCurrentChapterId(chapterId);
@@ -67,33 +73,86 @@ const handleChapter = (action, chapterId) => {
     }
   };
 
-  {/*Function for Adding the lecture after the Chapter */}
-   const addLecture =  () => {
+  {
+    /*Function for Adding the lecture after the Chapter */
+  }
+  const addLecture = () => {
     setChapters(
-    chapters.map((chapter)=>{
-      if (chapter.chapterId === currentChapterId) {
-        const newLecture = {
-          ...lectureDetails,
-          lectureOrder : chapter.chapterContent.length>0 ? chapter.chapterContent.slice(-1)[0].lectureOrder + 1:1,
-          lectureId : uniqid()
-        };
-        chapter.chapterContent.push(newLecture);
-      }
-      return chapter;
-    }))
+      chapters.map((chapter) => {
+        if (chapter.chapterId === currentChapterId) {
+          const newLecture = {
+            ...lectureDetails,
+            lectureOrder:
+              chapter.chapterContent.length > 0
+                ? chapter.chapterContent.slice(-1)[0].lectureOrder + 1
+                : 1,
+            lectureId: uniqid(),
+          };
+          chapter.chapterContent.push(newLecture);
+        }
+        return chapter;
+      })
+    );
     setShowPopup(false);
     setLectureDetails({
-      lectureTitle: '',
-      lectureDuration:'',
-      lectureUrl:'',
+      lectureTitle: "",
+      lectureDuration: "",
+      lectureUrl: "",
       isPreviewFree: false,
     });
-   }
+  };
 
-   {/*Function for Adding the lecture to the chapter  */}
-   const handleSubmit = async(e)=>{
-    e.preventDefault();
-   }
+  {
+    /*Function for Adding the lecture to the chapter  */
+  }
+  const handleSubmit = async (e) => {
+    try {
+      e.preventDefault();
+      if (!image) {
+        return toast.error("Please upload a course thumbnail image.");
+      }
+
+      const courseData = {
+        courseTitle,
+        courseDescription: quillRef.current.root.innerHTML,
+        coursePrice: Number(coursePrice),
+        discount: Number(discount),
+        courseContent: chapters,
+      };
+
+      // Convert chapters to JSON string and append to formData
+      const formData = new FormData();
+      formData.append("courseData", JSON.stringify(courseData));
+      formData.append("image", image);
+
+      // Get the token from context
+
+      const token = await getToken();
+      const { data } = await axios.post(
+        backendURL + "/api/educator/add-course",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (data.success) {
+        toast.success("Course added successfully!");
+        // Reset form fields after successful submission
+        setCourseTitle("");
+        setCoursePrice(0);
+        setImage(null);
+        setDiscount(0);
+        setChapters([]);
+        quillRef.current.root.innerHTML = "";
+      } else {
+        toast.error(data.message || "Failed to add course");
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   useEffect(() => {
     {
@@ -108,7 +167,10 @@ const handleChapter = (action, chapterId) => {
 
   return (
     <div className="h-screen overflow-scroll flex flex-col items-start justify-between md:p-8 md:pb-0 p-4 pt-8 pb-0">
-      <form className="flex flex-col gap-4 max-w-md w-full text-gray-500" onSubmit={handleSubmit}>
+      <form
+        className="flex flex-col gap-4 max-w-md w-full text-gray-500"
+        onSubmit={handleSubmit}
+      >
         <div className="flex flex-col gap-1">
           <p>Course Title</p>
           <input
@@ -181,7 +243,7 @@ const handleChapter = (action, chapterId) => {
                 <div className="flex items-center">
                   <img
                     src={assets.dropdown_icon}
-                    onClick={() => handleChapter('toggle', chapter.chapterId)}
+                    onClick={() => handleChapter("toggle", chapter.chapterId)}
                     alt="dropdown_icon"
                     width={14}
                     className={`mr-2 cursor-pointer transition-all ${
@@ -198,7 +260,7 @@ const handleChapter = (action, chapterId) => {
                 </span>
                 <img
                   className="cursor-pointer"
-                  onClick={() => handleChapter('remove', chapter.chapterId)}
+                  onClick={() => handleChapter("remove", chapter.chapterId)}
                   src={assets.cross_icon}
                   alt=""
                 />
@@ -318,7 +380,7 @@ const handleChapter = (action, chapterId) => {
                   />
                 </div>
                 <button
-                onClick={addLecture}
+                  onClick={addLecture}
                   type="button"
                   className="w-full bg-blue-400 text-white px-4 py-2 rounded"
                 >

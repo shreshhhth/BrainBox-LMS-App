@@ -24,7 +24,6 @@ export const getUserData = async (req, res) => {
 export const userEnrolledCourses = async (req, res) => {
     try {
         const userId = req.auth.userId
-        console.log(userId);
         const userData = await User.findById(userId).populate('enrolledCourses')
         if (!userData) {
             return res.json({ success: false, message: "User not found" });
@@ -77,7 +76,7 @@ export const purchaseCourse = async (req, res) => {
             },
             quantity: 1,
         }];
- 
+
         const session = await stripeInstance.checkout.sessions.create({
             success_url: `${origin}/loading/my-enrollments`,
             cancel_url: `${origin}/`,
@@ -130,6 +129,7 @@ export const getUserCourseProgress = async (req, res) => {
         res.json({ success: false, message: error.message })
     }
 }
+
 
 //Add User Ratings to Course
 export const addUserRating = async (req, res) => {

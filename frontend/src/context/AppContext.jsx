@@ -1,5 +1,4 @@
 import { createContext, useEffect, useState } from "react";
-import { dummyCourses } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
 import humanizeDuration from "humanize-duration";
 import { useAuth, useUser } from "@clerk/clerk-react";
@@ -28,7 +27,7 @@ export const AppContextProvider = (props) => {
   const [userData, setUserData] = useState(null);
 
   {
-    /*Fetching all the courses */
+    /*Fetching all the courses from the backend */
   }
   const fetchAllCourses = async () => {
     try {
@@ -59,10 +58,10 @@ export const AppContextProvider = (props) => {
       if (data.success) {
         setUserData(data.user);
       } else {
-        toast.error(data.message);
+        toast.error(`The UserData error: ${data.message}`);
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(`The UserData error: ${error.message}`);
     }
   };
 
@@ -115,10 +114,16 @@ export const AppContextProvider = (props) => {
   //Function to fetch user enrolled Courses to be displayed on My Enrollment page
   const fetchUserEnrolledCourses = async () => {
     try {
-      const token = getToken();
+      const token = await getToken();
+
       const { data } = await axios.get(
         backendURL + "/api/user/enrolled-courses",
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
       );
       if (data.success) {
         setEnrolledCourses(data.enrolledCourses.reverse());
@@ -130,22 +135,15 @@ export const AppContextProvider = (props) => {
     }
   };
 
-  const logToken = async () => {
-    console.log(await getToken());
-    
-  }
-
   useEffect(() => {
     fetchAllCourses();
-    
   }, []);
 
   useEffect(() => {
     if (user) {
       fetchUserData();
-      logToken();
+
       fetchUserEnrolledCourses();
-      
     }
   }, [user]);
 
@@ -167,6 +165,7 @@ export const AppContextProvider = (props) => {
     setUserData,
     getToken,
     fetchAllCourses,
+    fetchUserData,
   };
 
   return (

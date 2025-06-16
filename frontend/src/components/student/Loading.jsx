@@ -1,13 +1,27 @@
-import React from 'react'
+import React, { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 const Loading = () => {
-  return (
-    <div className='min-h-screen flex items-center justify-center'>
-      <div className='w-16 sm:w-20 aspect-square border-4 border-gray-300 border-t-4 border-t-blue-400 rounded-full animate-spin'>
+  const { path } = useParams();
+  const navigate = useNavigate();
 
-      </div>
+  //This component will be shown after the success payment as stripe takes some time to process the request
+  useEffect(() => {
+    if (path) {
+      const timer = setTimeout(() => {
+        navigate(`/${path}`);
+      }, 5000);
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, []);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-16 sm:w-20 aspect-square border-4 border-gray-300 border-t-4 border-t-blue-400 rounded-full animate-spin"></div>
     </div>
-  )
-}
- 
-export default Loading
+  );
+};
+
+export default Loading;
