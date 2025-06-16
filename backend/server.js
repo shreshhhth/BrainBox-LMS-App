@@ -23,7 +23,7 @@ app.post('/clerk', express.json(), clerkWebhooks)
 
 //Middlewares
 app.use(cors({
-    origin: 'http://localhost:5174', // or your deployed frontend URL
+    origin: process.env.FRONTEND_URL, 
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
 }))
